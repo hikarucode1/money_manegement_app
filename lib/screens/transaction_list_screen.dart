@@ -57,7 +57,46 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             itemCount: provider.transactions.length,
             itemBuilder: (context, index) {
               final transaction = provider.transactions[index];
-              return _buildTransactionCard(transaction, provider);
+              return Dismissible(
+                key: ValueKey(transaction.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  color: Colors.red,
+                  child:
+                      const Icon(Icons.delete, color: Colors.white, size: 32),
+                ),
+                confirmDismiss: (direction) async {
+                  return await showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('取引を削除'),
+                      content: Text('「${transaction.title}」を削除しますか？'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text('キャンセル'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: const Text(
+                            '削除',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                onDismissed: (direction) {
+                  provider.deleteTransaction(transaction.id!);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('取引「${transaction.title}」を削除しました')),
+                  );
+                },
+                child: _buildTransactionCard(transaction),
+              );
             },
           );
         },
@@ -65,8 +104,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     );
   }
 
-  Widget _buildTransactionCard(
-      Transaction transaction, TransactionProvider provider) {
+  Widget _buildTransactionCard(Transaction transaction) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
@@ -121,37 +159,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
             ),
           ],
         ),
-        onLongPress: () => _showDeleteDialog(transaction, provider),
       ),
-    );
-  }
-
-  void _showDeleteDialog(
-      Transaction transaction, TransactionProvider provider) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('取引を削除'),
-          content: Text('「${transaction.title}」を削除しますか？'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('キャンセル'),
-            ),
-            TextButton(
-              onPressed: () {
-                provider.deleteTransaction(transaction.id!);
-                Navigator.of(context).pop();
-              },
-              child: const Text(
-                '削除',
-                style: TextStyle(color: Colors.red),
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 }
